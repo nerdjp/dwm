@@ -702,7 +702,8 @@ drawbar(Monitor *m)
 {
 	int x, w, tw = 0;
 	int boxs = drw->fonts->h / 9;
-	int boxw = drw->fonts->h / 6 + 2;
+	int boxw = drw->fonts->h * 2;
+	int boxh = 1;
 	unsigned int i, occ = 0, urg = 0;
 	Client *c;
 
@@ -728,20 +729,25 @@ drawbar(Monitor *m)
 			drw_setscheme(drw, scheme[m->tagset[m->seltags] & 1 << i ? SchemeSec : SchemeNorm]);
 		drw_text(drw, x, 0, w, bh, lrpad / 2, tags[i], urg & 1 << i);
 		if (occ & 1 << i)
-			drw_rect(drw, x + boxs, boxs, boxw, boxw,
-				m == selmon && selmon->sel && selmon->sel->tags & 1 << i,
-				urg & 1 << i);
+			if(m->sel && m->sel->tags & 1 << i) {
+				drw_rect(drw, x + boxs, bh - boxh - 1, boxw, boxh * 2, 1, urg & 1 << i);
+			} else {
+				//drw_setscheme(drw, scheme[SchemeNorm]);
+				drw_rect(drw, x + boxs, bh - boxh, boxw, boxh, 1, urg & 1 << i);
+			}
 		x += w;
 	}
-	w = blw = TEXTW(m->ltsymbol);
+	w = blw = TEXTW("|");
 	drw_setscheme(drw, scheme[SchemeNorm]);
-	x = drw_text(drw, x, 0, w, bh, lrpad / 2, m->ltsymbol, 0);
+	x = drw_text(drw, x, 0, w, bh, lrpad / 2, "|", 0);
 
 	if ((w = m->ww - tw - x) > bh) {
 		if (m->sel) {
 			drw_text(drw, x, 0, w, bh, lrpad / 2, m->sel->name, 0);
-			if (m->sel->isfloating)
-				drw_rect(drw, x + boxs, boxs, boxw, boxw, m->sel->isfixed, 0);
+			//if (m->sel->isfloating)
+				//drw_rect(drw, x + boxs, boxs, boxw, 
+					//m == selmon && selmon->sel && selmon->sel->tags & 1 << i ? boxh : boxh*2,
+					//m->sel->isfixed, 0);
 		} else {
 			drw_rect(drw, x, 0, w, bh, 1, 1);
 		}
@@ -1066,6 +1072,8 @@ manage(Window w, XWindowAttributes *wa)
 	updatewindowtype(c);
 	updatesizehints(c);
 	updatewmhints(c);
+	c->x = c->mon->mx + (c->mon->mw - WIDTH(c)) / 2;
+	c->y = c->mon->my + (c->mon->mh - HEIGHT(c)) / 2;
 	XSelectInput(dpy, w, EnterWindowMask|FocusChangeMask|PropertyChangeMask|StructureNotifyMask);
 	grabbuttons(c, 0);
 	if (!c->isfloating)
